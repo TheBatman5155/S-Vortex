@@ -46,7 +46,7 @@ export default new Command({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     } else {
       const EmbedSettings = "Settings: `Customize various aspects of the poll`";
@@ -93,7 +93,7 @@ export default new Command({
           }
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     }
   },

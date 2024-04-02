@@ -1,9 +1,4 @@
-import {
-  ApplicationCommandOptionType,
-  EmbedBuilder,
-  Interaction,
-  time,
-} from "discord.js";
+import { ApplicationCommandOptionType } from "discord.js";
 import { Command } from "../../structure/Command";
 import { Embed, ErrorEmbed } from "../../components/Embed";
 import { PrismaClient } from "@prisma/client";
@@ -19,92 +14,87 @@ export default new Command({
     },
   ],
   run: async ({ client, interaction }) => {
-    // Constructing
-    if (!interaction.inCachedGuild()) return;
-    const prisma = new PrismaClient();
-    const guildId = interaction.guildId;
-    const logs_channelId = (
-      await prisma.guild.findFirst({ where: { guild_id: guildId } })
-    ).logs_channel_id;
-    const logs_channel = client.channels.cache.get(logs_channelId);
-    const user = interaction.options.getUser("user");
     const admin = interaction.user;
     if (!interaction.guild) {
       const guild_embed = new ErrorEmbed({
         user: admin,
-        error: "The command can only be used inside a server",
+        error: "This command could only be used inside a server",
         code: 405,
       });
-      try {
-        return interaction.reply({
-          embeds: [guild_embed],
-          ephemeral: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
+      return interaction.reply({
+        embeds: [guild_embed],
+        ephemeral: true,
+      });
     }
-    if (!interaction.memberPermissions.has("BanMembers")) {
+    if (!interaction.inCachedGuild()) return;
+    const user = interaction.options.getUser("user");
+    const member = interaction.options.getMember("user");
+    if (
+      !interaction.memberPermissions.has("BanMembers") ||
+      !interaction.guild.members.me.permissions.has("BanMembers") ||
+      member?.permissions.has("Administrator") ||
+      user.id === admin.id
+    ) {
       const permission_embed = new ErrorEmbed({
         user: admin,
         error: "Insufficient Permissions",
         code: 403,
       });
-      try {
-        return interaction.reply({
-          embeds: [permission_embed],
-          ephemeral: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
+      return interaction.reply({
+        embeds: [permission_embed],
+        ephemeral: true,
+      });
     }
     const banList = await interaction.guild.bans.fetch();
     if (!banList.find((list) => (list.user.id = user.id))) {
-      const you_embed = new ErrorEmbed({
+      const not_banned_embed = new ErrorEmbed({
         user: admin,
-        error: "Cannot unban a person who isn't banned",
+        error: "Cannot unban a user who isn't banned",
         code: 403,
       });
-      try {
+      return interaction.reply({
+        embeds: [not_banned_embed],
+        ephemeral: true,
+      });
+    }
+    interaction.guild.members
+      .unban(user.id)
+      .then(async () => {
+        const embed_command = "Command: `Unban`";
+        const embed_username = "Username: `" + user.username + "`";
+        const embed_id = "ID: `" + user.id + "`";
+        const unban_embed = new Embed({ user })
+          .setDescription(`${embed_command}\n${embed_username}\n${embed_id}`)
+          .setTimestamp();
+        const prisma = new PrismaClient();
+        const guildId = interaction.guildId;
+        const guild_find = await prisma.guild.findFirst({
+          where: { guild_id: guildId },
+        });
+        if (guild_find.logs_channel_id) {
+          const logs_channel_id = guild_find.logs_channel_id;
+          const logs_channel = client.channels.cache.get(logs_channel_id);
+          if (!logs_channel.isTextBased()) return;
+          logs_channel.send({
+            embeds: [unban_embed],
+          });
+        }
         return interaction.reply({
-          embeds: [you_embed],
-          ephemeral: true,
-        });
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    try {
-      await interaction.guild.members.unban(user.id);
-      // Embed
-      const embed_username = "Username: `" + user.username + "`";
-      const embed_id = "ID: `" + user.id + "`";
-      const embed_unbanned_by = "By: `" + admin.username + "`  ";
-      const unban_embed = new Embed({ user })
-        .setTitle(`Unban ${user.displayName}`)
-        .setDescription(
-          `> Successfully unbanned ${user.displayName}\n${embed_username}\n${embed_id}\n`
-        )
-        .setTimestamp();
-
-      // Send messages
-      if (logs_channel.isTextBased()) {
-        logs_channel.send({
           embeds: [unban_embed],
         });
-      }
-      try {
-        interaction.reply({
-          embeds: [unban_embed],
-          ephemeral: true,
+      })
+      .catch((e) => {
+        console.log(e);
+        const ban_error_embed = new ErrorEmbed({
+          user: admin,
+          error: "Insufficient Permission [ Unknown Error ]",
+          code: 403,
         });
-      } catch (error) {
-        console.log(error);
-      }
-    } catch (e) {
-      console.log(e);
-      // interaction.reply({ content: `${e}`, ephemeral: true });
-    }
+        if (!interaction.replied) {
+          return interaction.reply({
+            embeds: [ban_error_embed],
+          });
+        }
+      });
   },
 });

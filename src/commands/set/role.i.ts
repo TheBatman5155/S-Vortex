@@ -25,7 +25,7 @@ export default async function run({
         ephemeral: true,
       });
     } catch (error) {
-      console.log(error);
+      ;
     }
   }
   if (member.roles.cache.has(role.id)) {
@@ -40,7 +40,7 @@ export default async function run({
         ephemeral: true,
       });
     } catch (error) {
-      console.log(error);
+      ;
     }
   }
   if (!interaction.memberPermissions.has("ManageRoles")) {
@@ -55,7 +55,7 @@ export default async function run({
         ephemeral: true,
       });
     } catch (error) {
-      console.log(error);
+      ;
     }
   }
   member.roles
@@ -76,7 +76,7 @@ export default async function run({
           embeds: [GreenEmbed],
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     })
     .catch((e) => {
@@ -86,7 +86,7 @@ export default async function run({
         error:
           "Insufficient Permissions. [ Bot ]`\nValidation: `Place the bot role higher than the role adding",
       });
-      console.log(e);
+      ;
 
       try {
         interaction.reply({
@@ -95,7 +95,7 @@ export default async function run({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     });
 }

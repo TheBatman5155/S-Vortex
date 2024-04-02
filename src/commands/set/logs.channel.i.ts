@@ -31,6 +31,6 @@ export default async function run({
       embeds: [GreenEmbed],
     });
   } catch (error) {
-    console.log(error);
+    ;
   }
 }

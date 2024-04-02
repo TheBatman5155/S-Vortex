@@ -26,8 +26,8 @@ export default new Command({
     const guildId = interaction.guildId;
     const logs_channelId = (
       await prisma.guild.findFirst({ where: { guild_id: guildId } })
-    ).logs_channel_id;
-    const logs_channel = client.channels.cache.get(logs_channelId);
+    )?.logs_channel_id;
+    const logs_channel = client.channels.cache.get(logs_channelId) ?? null;
     const admin = interaction.user;
     const amount = interaction.options.getNumber("amount");
     if (!interaction.memberPermissions.has("ManageMessages")) {
@@ -41,9 +41,7 @@ export default new Command({
           embeds: [permission_embed],
           ephemeral: true,
         });
-      } catch (error) {
-        console.log(error);
-      }
+      } catch (error) {}
     }
     const embed_amount = "Amount: `" + amount + " messages`";
     const purge_embed = new Embed({ user: admin })
@@ -52,50 +50,52 @@ export default new Command({
       .setTimestamp();
     const deleteReply = (reply: Message<boolean>) => {
       setTimeout(() => {
-        reply.delete();
+        reply.delete().catch((e) => {
+          console.log("Error deleting reply");
+        });
       }, 3 * 1000);
     };
-    try {
-      // Send messages
-      const messages = await interaction.channel.messages.fetch({
-        limit: amount,
-      });
-      const filter = messages.filter(
-        (msg) => Date.now() - msg.createdTimestamp < ms("14 days")
-      );
-      interaction.channel.bulkDelete(filter).then(async () => {
-        await interaction.deferReply();
+    // Send messages
+    const messages = await interaction.channel.messages.fetch({
+      limit: amount,
+    });
+    const filter = messages.filter(
+      (msg) => Date.now() - msg.createdTimestamp < ms("14 days")
+    );
+    interaction.channel
+      .bulkDelete(filter)
+      .then(async () => {
+        await interaction.deferReply().catch(() => console.log("Error deferring reply"));
         interaction
           .editReply({
             embeds: [purge_embed],
           })
           .then((reply) => {
             deleteReply(reply);
-            if (logs_channel.isTextBased()) {
-              logs_channel.send({
-                embeds: [purge_embed],
-              });
+            if (logs_channel) {
+              if (logs_channel.isTextBased()) {
+                logs_channel.send({
+                  embeds: [purge_embed],
+                });
+              }
             }
-          });
-      });
-    } catch (e) {
-      console.log(e);
-      const error_embed = new ErrorEmbed({
-        user: admin,
-        error: "Cannot delete messages over 14 days old",
-        code: 403,
-      });
-      try {
+          }).catch(() => console.log("Error editing reply"));
+      })
+      .catch((e) => {
+        const error_embed = new ErrorEmbed({
+          user: admin,
+          error: "Cannot delete messages over 14 days old",
+          code: 403,
+        });
+        if (interaction.replied) return;
         interaction
           .reply({
             embeds: [error_embed],
           })
           .then((reply) => {
             reply.delete();
-          });
-      } catch (error) {
-        console.log(error);
-      }
-    }
+          })
+          .catch((err) => console.log(err));
+      });
   },
 });

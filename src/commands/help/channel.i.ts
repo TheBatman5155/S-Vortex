@@ -19,7 +19,5 @@ export default function run({
     interaction.reply({
       embeds: [ChannelEmbed],
     });
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 }

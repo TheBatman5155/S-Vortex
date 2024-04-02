@@ -45,7 +45,7 @@ export default new Command({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     }
     if (!interaction.memberPermissions.has("KickMembers")) {
@@ -60,7 +60,7 @@ export default new Command({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     }
     if (user.id === admin.id) {
@@ -75,7 +75,7 @@ export default new Command({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     }
     if (member?.permissions.has("Administrator")) {
@@ -112,10 +112,10 @@ export default new Command({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     } catch (e) {
-      console.log(e);
+      ;
       // interaction.reply({ content: `${e}`, ephemeral: true });
     }
   },

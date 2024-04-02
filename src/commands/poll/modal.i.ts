@@ -169,7 +169,7 @@ export default async function run({
           ephemeral: true,
         });
       } catch (error) {
-        console.log(error);
+        ;
       }
     });
 }

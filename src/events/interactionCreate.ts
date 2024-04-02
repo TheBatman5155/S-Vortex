@@ -8,25 +8,23 @@ export default new Event("interactionCreate", async (interaction) => {
   const command = client.commands.get(interaction.commandName);
   const fetchUser = await prisma.user.findFirst({
     where: {
-      id: interaction.user.id
-    }
-  })
+      id: interaction.user.id,
+    },
+  });
   if (!command) return;
   try {
     command?.run({
       client,
       interaction: interaction as ChatInputCommandInteraction,
     });
-  } catch (e) {
-    console.log(e);
-  }
+  } catch (e) {}
   if (!fetchUser) {
     await prisma.user.create({
       data: {
         id: interaction.user.id,
-        username: interaction.user.username
-      }
-    })
+        username: interaction.user.username,
+      },
+    });
     return;
   }
 });
